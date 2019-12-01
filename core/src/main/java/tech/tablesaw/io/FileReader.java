@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import tech.tablesaw.api.ColumnType;
 import tech.tablesaw.api.Table;
 import tech.tablesaw.columns.AbstractColumnParser;
@@ -120,12 +121,14 @@ public abstract class FileReader {
       AbstractParser<?> reader,
       Table table,
       int[] columnIndexes) {
-    String[] nextLine;
 
+    String[] nextLine;
     Map<String, AbstractColumnParser<?>> parserMap = getParserMap(options, table);
 
+    Random random = new Random(0);
+    int numSamples = options.sampleRowsIfGreaterThan();
     // Add the rows
-    for (long rowNumber = options.header() ? 1L : 0L;
+    for (int rowNumber = options.header() ? 1 : 0;
         (nextLine = reader.parseNext()) != null;
         rowNumber++) {
       // validation
@@ -156,20 +159,44 @@ public abstract class FileReader {
                 + " expected.");
       }
 
-      // append each column that we're including (not skipping)
-      int cellIndex = 0;
-      for (int columnIndex : columnIndexes) {
-        Column<?> column = table.column(cellIndex);
-        AbstractColumnParser<?> parser = parserMap.get(column.name());
-        try {
-          String value = nextLine[columnIndex];
-          column.appendCell(value, parser);
-        } catch (Exception e) {
-          throw new AddCellToColumnException(
-              e, columnIndex, rowNumber, table.columnNames(), nextLine);
+      int samplesCount = table.rowCount();
+      if (numSamples == -1 || samplesCount < numSamples) {
+        addValuesToColumns(table, columnIndexes, nextLine, parserMap, rowNumber, -1);
+      } else {
+        // find a row index to replace
+        int randomIndex = random.nextInt(samplesCount + 1);
+        // replace index if it is smaller than numSamples, otherwise ignore it.
+        if (randomIndex < numSamples) {
+          addValuesToColumns(table, columnIndexes, nextLine, parserMap, rowNumber, randomIndex);
         }
-        cellIndex++;
       }
+    }
+  }
+
+  private void addValuesToColumns(
+      Table table,
+      int[] columnIndexes,
+      String[] nextLine,
+      Map<String, AbstractColumnParser<?>> parserMap,
+      int rowNumber,
+      int rowIndex) {
+    // append each column that we're including (not skipping)
+    int cellIndex = 0;
+    for (int columnIndex : columnIndexes) {
+      Column<?> column = table.column(cellIndex);
+      AbstractColumnParser<?> parser = parserMap.get(column.name());
+      try {
+        String value = nextLine[columnIndex];
+        if (rowIndex >= 0) {
+          column.set(rowIndex, value, parser);
+        } else {
+          column.appendCell(value, parser);
+        }
+      } catch (Exception e) {
+        throw new AddCellToColumnException(
+            e, columnIndex, rowNumber, table.columnNames(), nextLine);
+      }
+      cellIndex++;
     }
   }
 

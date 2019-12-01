@@ -75,6 +75,7 @@ public class ReadOptions {
   protected final String missingValueIndicator;
   protected final boolean minimizeColumnSizes;
   protected final int maxCharsPerColumn;
+  protected final int sampleRowsIfGreaterThan;
 
   protected final DateTimeFormatter dateFormatter;
   protected final DateTimeFormatter dateTimeFormatter;
@@ -94,6 +95,7 @@ public class ReadOptions {
     minimizeColumnSizes = builder.minimizeColumnSizes;
     header = builder.header;
     maxCharsPerColumn = builder.maxCharsPerColumn;
+    sampleRowsIfGreaterThan = builder.sampleRowsIfGreaterThan;
 
     dateFormatter = builder.dateFormatter;
     timeFormatter = builder.timeFormatter;
@@ -128,6 +130,10 @@ public class ReadOptions {
 
   public String missingValueIndicator() {
     return missingValueIndicator;
+  }
+
+  public int sampleRowsIfGreaterThan() {
+    return this.sampleRowsIfGreaterThan;
   }
 
   public Locale locale() {
@@ -186,6 +192,7 @@ public class ReadOptions {
     protected boolean minimizeColumnSizes = false;
     protected boolean header = true;
     protected int maxCharsPerColumn = 4096;
+    protected int sampleRowsIfGreaterThan = -1;
 
     protected Builder() {
       source = null;
@@ -291,6 +298,15 @@ public class ReadOptions {
      */
     public Builder minimizeColumnSizes() {
       this.columnTypesToDetect = EXTENDED_TYPES;
+      return this;
+    }
+
+    /**
+     * If the files contains more than numSamples, performs sampling using the single-pass reservoir
+     * sampling algorithm (https://en.wikipedia.org/wiki/Reservoir_sampling).
+     */
+    public Builder sampleRowsIfGreaterThan(int numSamples) {
+      this.sampleRowsIfGreaterThan = numSamples;
       return this;
     }
 

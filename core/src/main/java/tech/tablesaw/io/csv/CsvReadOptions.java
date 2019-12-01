@@ -38,7 +38,6 @@ public class CsvReadOptions extends ReadOptions {
 
   private CsvReadOptions(CsvReadOptions.Builder builder) {
     super(builder);
-
     columnTypes = builder.columnTypes;
     separator = builder.separator;
     quoteChar = builder.quoteChar;
@@ -128,6 +127,10 @@ public class CsvReadOptions extends ReadOptions {
 
   public int maxCharsPerColumn() {
     return maxCharsPerColumn;
+  }
+
+  public int sampleRowsIfGreaterThan() {
+    return sampleRowsIfGreaterThan;
   }
 
   public static class Builder extends ReadOptions.Builder {
@@ -279,6 +282,12 @@ public class CsvReadOptions extends ReadOptions {
     @Override
     public Builder minimizeColumnSizes() {
       super.minimizeColumnSizes();
+      return this;
+    }
+
+    /** {@inheritDoc} */
+    public Builder sampleRowsIfGreaterThan(int numSamples) {
+      super.sampleRowsIfGreaterThan(numSamples);
       return this;
     }
   }
